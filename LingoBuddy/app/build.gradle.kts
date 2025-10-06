@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -37,7 +38,7 @@ android {
 
 dependencies {
 
-    implementation(libs.androidx.core.ktx)
+    implementation("androidx.core:core-ktx:1.12.0")
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
@@ -45,4 +46,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation(platform("com.google.firebase:firebase-bom:32.3.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation ("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation ("com.google.android.gms:play-services-auth:20.7.0")
+    implementation ("androidx.recyclerview:recyclerview:1.3.2")
 }
