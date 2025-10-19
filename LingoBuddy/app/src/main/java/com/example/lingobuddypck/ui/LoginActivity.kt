@@ -142,7 +142,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
-        startActivity(Intent(this, MainActivity::class.java))
+        startActivity(Intent(this, NavigationActivity::class.java))
         finish()
     }
 }
