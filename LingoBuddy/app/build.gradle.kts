@@ -74,4 +74,6 @@ dependencies {
     implementation ("androidx.recyclerview:recyclerview:1.3.2")
     implementation ("androidx.navigation:navigation-fragment-ktx:2.7.7")
     implementation ("androidx.navigation:navigation-ui-ktx:2.7.7")
+    implementation ("com.google.mlkit:language-id:17.0.4")
+    implementation ("com.google.mlkit:translate:17.0.1")
 }
