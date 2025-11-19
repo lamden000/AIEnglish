@@ -1,0 +1,223 @@
+package com.example.lingobuddypck.adapter
+
+import android.content.Context
+import android.graphics.Typeface
+import android.graphics.drawable.AnimatedVectorDrawable
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.StyleSpan
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.recyclerview.widget.RecyclerView
+import com.example.lingobuddypck.services.Message
+import com.example.lingobuddypck.R
+
+class ChatAdapter(
+    private val messages: MutableList<Message>,
+    private val context: Context, // Giữ lại theo code gốc của bạn
+    private val onSpeakClick: (String?) -> Unit
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    companion object {
+        private const val VIEW_TYPE_USER = 0
+        private const val VIEW_TYPE_AI = 1
+        private const val VIEW_TYPE_TYPING_INDICATOR = 2 // Kiểu view mới
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        if (position < 0 || position >= messages.size) {
+            return VIEW_TYPE_AI
+        }
+        return when (messages[position].role) {
+            "user" -> VIEW_TYPE_USER
+            "assistant" -> VIEW_TYPE_AI
+            "typing_indicator" -> VIEW_TYPE_TYPING_INDICATOR
+            else -> VIEW_TYPE_AI // Mặc định hoặc xử lý lỗi nếu cần
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return when (viewType) {
+            VIEW_TYPE_USER -> {
+                val view = inflater.inflate(R.layout.item_message, parent, false)
+                UserMessageViewHolder(view)
+            }
+            VIEW_TYPE_AI -> {
+                val view = inflater.inflate(R.layout.item_message_other, parent, false)
+                // AIMessageViewHolder là inner class nên có thể truy cập context, firebaseWordRepository từ ChatAdapter
+                // nếu cần, nhưng tốt hơn là truyền qua constructor như bạn đang làm.
+                AIMessageViewHolder(view, context, onSpeakClick)
+            }
+            VIEW_TYPE_TYPING_INDICATOR -> {
+                val view = inflater.inflate(R.layout.item_typing_indicator, parent, false)
+                TypingIndicatorViewHolder(view)
+            }
+            else -> throw IllegalArgumentException("Invalid view type: $viewType")
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        // Kiểm tra an toàn cho messages[position]
+        if (position < 0 || position >= messages.size) return
+
+        val message = messages[position]
+        when (holder) {
+            is UserMessageViewHolder -> holder.bind(message)
+            is AIMessageViewHolder -> holder.bind(message)
+            is TypingIndicatorViewHolder -> holder.bind()
+        }
+    }
+
+    override fun getItemCount(): Int = messages.size
+
+    fun setMessages(newMessages: List<Message>) {
+        messages.clear()
+        messages.addAll(newMessages)
+        notifyDataSetChanged() // Cân nhắc dùng DiffUtil để hiệu năng tốt hơn với danh sách lớn
+    }
+
+    class UserMessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val textMessage: TextView = itemView.findViewById(R.id.textMessage)
+        private val messageImage: ImageView = itemView.findViewById(R.id.messageImage) // Giữ lại theo code gốc
+
+        fun bind(message: Message) {
+
+            textMessage.text = message.content
+
+            // Logic hiển thị hình ảnh của bạn (giữ nguyên)
+            if (message.imageUri != null) {
+                messageImage.visibility = View.VISIBLE
+                messageImage.setImageURI(message.imageUri)
+            } else {
+                messageImage.visibility = View.GONE
+            }
+        }
+    }
+
+    fun formatTextWithHighlightedEnglish(input: String?): SpannableStringBuilder? {
+        if (input == null) return null
+
+        val spannable = SpannableStringBuilder()
+        var currentIndex = 0
+        val tagOpen = "<en>"
+        val tagClose = "</en>"
+
+        val tagStack = mutableListOf<Int>() // Stores the start index in the spannable for each <en> tag
+
+        while (currentIndex < input.length) {
+            val nextOpenTag = input.indexOf(tagOpen, currentIndex)
+            val nextCloseTag = input.indexOf(tagClose, currentIndex)
+
+            // Case 1: An opening tag appears next
+            if (nextOpenTag != -1 && (nextOpenTag < nextCloseTag || nextCloseTag == -1)) {
+                // Append the text before the opening tag
+                if (nextOpenTag > currentIndex) {
+                    spannable.append(input.substring(currentIndex, nextOpenTag))
+                }
+                // Push the current length of the spannable onto the stack,
+                // marking where the bolding for this tag should begin.
+                tagStack.add(spannable.length)
+                currentIndex = nextOpenTag + tagOpen.length
+            }
+            // Case 2: A closing tag appears next
+            else if (nextCloseTag != -1) {
+                // Append the text before the closing tag
+                if (nextCloseTag > currentIndex) {
+                    spannable.append(input.substring(currentIndex, nextCloseTag))
+                }
+                // If there's an opening tag on the stack, apply the bolding.
+                if (tagStack.isNotEmpty()) {
+                    val spanStart = tagStack.removeAt(tagStack.lastIndex) // Pop the start index
+                    val spanEnd = spannable.length
+                    if (spanStart < spanEnd) { // Ensure there's content to span
+                        spannable.setSpan(
+                            StyleSpan(Typeface.BOLD),
+                            spanStart,
+                            spanEnd,
+                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                    }
+                }
+                currentIndex = nextCloseTag + tagClose.length
+            }
+            // Case 3: No more tags, append the rest of the string
+            else {
+                spannable.append(input.substring(currentIndex))
+                break
+            }
+        }
+
+        // After processing, if any tags remain unclosed (malformed input),
+        // their corresponding spans will not be applied.
+        return spannable
+    }
+
+
+    inner class AIMessageViewHolder(
+        itemView: View,
+        private val context: Context, // context này từ ChatAdapter
+        private val onSpeakClick: (String?) -> Unit // callback này từ ChatAdapter
+    ) : RecyclerView.ViewHolder(itemView) {
+
+        private val textMessage: TextView = itemView.findViewById(R.id.textMessage)
+        private val speakBtn: ImageButton = itemView.findViewById(R.id.speakButton)
+        // private val avatarImage: ImageView = itemView.findViewById(R.id.avatarAI) // Avatar được xử lý trong layout item_message_other
+
+        fun bind(message: Message) {
+            message.content?.let { Log.d("DEBUGCHAT", it) }
+            val displayText = formatTextWithHighlightedEnglish(message.content)
+            textMessage.text = displayText ?: message.content // Fallback nếu format lỗi
+
+            speakBtn.setOnClickListener {
+                onSpeakClick(message.content) // TTS vẫn dùng content gốc có tag
+            }
+
+        }
+    }
+
+    class TypingIndicatorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val typingIndicatorImageView: ImageView = itemView.findViewById(R.id.typingIndicatorImageView)
+        private var avd: AnimatedVectorDrawable? = null
+
+        init {
+            val drawable = typingIndicatorImageView.drawable
+            if (drawable is AnimatedVectorDrawable) {
+                avd = drawable
+            }
+        }
+
+        fun bind() {
+            avd?.start()
+        }
+
+        fun onAttached() {
+            avd?.start()
+        }
+
+        fun onDetached() {
+            avd?.stop()
+        }
+    }
+
+    // Override các hàm này trong Adapter để quản lý animation của TypingIndicatorViewHolder
+    override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        if (holder is TypingIndicatorViewHolder) {
+            holder.onAttached()
+        }
+    }
+
+    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+        if (holder is TypingIndicatorViewHolder) {
+            holder.onDetached()
+        }
+    }
+}
