@@ -1,4 +1,4 @@
-package com.example.lingobuddypck.RolePlay
+package com.example.lingobuddypck.ui.RolePlay
 
 import androidx.fragment.app.Fragment
 
