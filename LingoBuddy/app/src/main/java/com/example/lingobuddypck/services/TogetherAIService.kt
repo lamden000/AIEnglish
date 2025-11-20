@@ -69,3 +69,9 @@ data class MessageContent(
     val content: String,
     val tool_calls: List<Any>
 )
+
+data class PronunciationFeedback(
+    val score: Double,
+    val mistakes: List<String>,
+    val suggestions: List<String>
+)
