@@ -3,14 +3,13 @@ package com.example.lingobuddypck.ui
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.viewModels
-import com.example.lingobuddypck.Services.QuizService.AiQuizService
-import com.example.lingobuddypck.Services.QuizService.PassageQuiz.PassageQuizUIManager
-import com.example.lingobuddypck.Network.RetrofitClient
+import com.example.lingobuddypck.services.QuizService.AiQuizService
+import com.example.lingobuddypck.services.QuizService.PassageQuiz.PassageQuizUIManager
+import com.example.lingobuddypck.network.RetrofitClient
 import com.example.lingobuddypck.R
-import com.example.lingobuddypck.Services.QuizService.PassageQuiz.PassageQuizViews
+import com.example.lingobuddypck.services.QuizService.PassageQuiz.PassageQuizViews
 import com.example.lingobuddypck.ViewModel.PassageQuizViewModelImpl
-import com.example.lingobuddypck.Repository.FirebaseWordRepository
-import com.example.lingobuddypck.utils.TaskManager
+import com.example.lingobuddypck.repository.FirebaseWordRepository
 import com.google.gson.Gson
 
 class PassageQuizActivity : AppCompatActivity() {
