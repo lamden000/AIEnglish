@@ -17,10 +17,10 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
 
-import com.example.lingobuddypck.Services.QuestionData
-import com.example.lingobuddypck.Services.UserAnswer
+import com.example.lingobuddypck.services.QuestionData
+import com.example.lingobuddypck.services.UserAnswer
 import com.example.lingobuddypck.R
-import com.example.lingobuddypck.Repository.FirebaseWordRepository
+import com.example.lingobuddypck.repository.FirebaseWordRepository
 import com.example.lingobuddypck.utils.TopicUtils
 import com.example.lingobuddypck.utils.enableSelectableSaveAction
 import com.google.firebase.auth.FirebaseAuth
