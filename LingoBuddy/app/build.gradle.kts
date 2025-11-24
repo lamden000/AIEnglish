@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     id("com.google.gms.google-services")
+    id("androidx.navigation.safeargs.kotlin")
     id("kotlin-parcelize")
 }
 
@@ -21,6 +22,7 @@ android {
     compileSdk = 34
     buildFeatures {
         buildConfig = true
+        viewBinding =true
     }
 
     defaultConfig {
