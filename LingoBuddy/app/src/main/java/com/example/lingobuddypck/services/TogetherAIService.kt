@@ -1,6 +1,8 @@
 package com.example.lingobuddypck.services
 
 import android.net.Uri
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -68,4 +70,23 @@ data class MessageContent(
     val role: String,
     val content: String,
     val tool_calls: List<Any>
+)
+
+data class PronunciationFeedback(
+    val score: Double,
+    val mistakes: List<String>,
+    val suggestions: List<String>
+)
+
+@Parcelize // <-- Make sure this annotation is directly above the class
+data class QuestionData(
+    val id: String,
+    val question_text: String,
+    val options: Map<String, String>, // Standard types like String and Map<String, String> are usually fine with Parcelize
+    val correct_answer: String
+) : Parcelable
+
+data class UserAnswer(
+    val questionId: String,
+    val selectedOptionKey: String // "a", "b", "c", hoặc "d"
 )
