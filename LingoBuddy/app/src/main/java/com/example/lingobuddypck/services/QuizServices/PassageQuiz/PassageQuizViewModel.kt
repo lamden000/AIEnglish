@@ -1,11 +1,10 @@
 package com.example.lingobuddypck.Services.QuizService.PassageQuiz
 
 import androidx.lifecycle.LiveData
-import com.example.lingobuddypck.Services.AIGradingResult
-import com.example.lingobuddypck.Services.PassageQuizData
-import com.example.lingobuddypck.Services.QuestionData
-import com.example.lingobuddypck.Services.UserAnswer
 import com.example.lingobuddypck.data.DisplayableQuizContent
+import com.example.lingobuddypck.services.AIGradingResult
+import com.example.lingobuddypck.services.QuestionData
+import com.example.lingobuddypck.services.UserAnswer
 
 
 interface PassageQuizViewModel {
