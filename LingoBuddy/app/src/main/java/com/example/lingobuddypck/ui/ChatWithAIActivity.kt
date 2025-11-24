@@ -24,9 +24,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
-import com.example.lingobuddypck.BuildConfig
 import com.example.lingobuddypck.R
-import com.example.lingobuddypck.repository.FirebaseWordRepository
 import com.example.lingobuddypck.services.Message
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.nl.languageid.LanguageIdentification
