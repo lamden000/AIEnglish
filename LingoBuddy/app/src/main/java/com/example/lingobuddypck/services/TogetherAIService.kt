@@ -90,3 +90,14 @@ data class UserAnswer(
     val questionId: String,
     val selectedOptionKey: String // "a", "b", "c", hoặc "d"
 )
+
+data class AIGradingResult(
+    val score: Int,
+    val total_questions: Int,
+    val feedback: Map<String, QuestionFeedback> // Optional: {"q1": "correct", "q2": "incorrect"}
+)
+
+data class QuestionFeedback(
+    val status: String, // Expected "correct" or "incorrect"
+    val explanation: String? = null // This field is optional and will be null if not present (like for "correct" answers)
+)
