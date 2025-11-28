@@ -119,4 +119,93 @@ class SettingViewModel : ViewModel() {
                 _isFetchingDetails.value = false
             }
     }
+
+    // --- Các hàm save hiện tại của bạn ---
+    fun savePersonalInfo(name: String?, job: String?, interest: String?, otherInfo: String?) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            _errorMessage.value = "Người dùng chưa đăng nhập."
+            return
+        }
+        _isSavingPersonalInfo.value = true
+        _personalInfoSaveSuccess.value = false
+
+        val personalInfoMap = mutableMapOf<String, Any>()
+        if (!name.isNullOrBlank()) personalInfoMap["name"] = name else personalInfoMap["name"] = FieldValue.delete()
+        if (!job.isNullOrBlank()) personalInfoMap["job"] = job else personalInfoMap["job"] = FieldValue.delete()
+        if (!interest.isNullOrBlank()) personalInfoMap["interest"] = interest else personalInfoMap["interest"] = FieldValue.delete()
+        if (!otherInfo.isNullOrBlank()) personalInfoMap["otherInfo"] = otherInfo else personalInfoMap["otherInfo"] = FieldValue.delete()
+
+        if (personalInfoMap.isNotEmpty() || name.isNullOrBlank() || job.isNullOrBlank() || interest.isNullOrBlank() || otherInfo.isNullOrBlank() ) {
+            // Luôn cập nhật timestamp nếu có bất kỳ thay đổi nào hoặc cố ý xóa
+            personalInfoMap["profileLastUpdated"] = FieldValue.serverTimestamp()
+        } else {
+            _isSavingPersonalInfo.value = false
+            // _errorMessage.value = "Không có thông tin để lưu." // Tùy chọn
+            return
+        }
+
+        db.collection("users").document(userId)
+            .set(personalInfoMap, SetOptions.merge())
+            .addOnSuccessListener {
+                _isSavingPersonalInfo.value = false
+                _personalInfoSaveSuccess.value = true
+                // Cập nhật local state sau khi lưu thành công
+                val currentProfile = _fetchedUserInfo.value
+                _fetchedUserInfo.value = currentProfile?.copy(
+                    name = if (name.isNullOrBlank()) null else name,
+                    job = if (job.isNullOrBlank()) null else job,
+                    interest = if (interest.isNullOrBlank()) null else interest,
+                    otherInfo = if (otherInfo.isNullOrBlank()) null else otherInfo
+                )
+            }
+            .addOnFailureListener { e ->
+                _isSavingPersonalInfo.value = false
+                _errorMessage.value = "Lỗi khi lưu thông tin cá nhân: ${e.message}"
+            }
+    }
+
+    // --- Hàm MỚI để lưu AI Tone ---
+    fun saveAiChatTone(tone: String) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            _errorMessage.value = "Người dùng chưa đăng nhập."
+            return
+        }
+
+        _isSavingAiTone.value = true
+        _aiToneSaveSuccess.value = false
+        val finalTone = tone.ifBlank { "trung lập và thân thiện" }
+
+        val toneData = hashMapOf(
+            "aiChatTone" to finalTone,
+            "aiChatToneLastUpdated" to FieldValue.serverTimestamp()
+        )
+
+        db.collection("users").document(userId)
+            .set(toneData, SetOptions.merge())
+            .addOnSuccessListener {
+                _isSavingAiTone.value = false
+                _aiToneSaveSuccess.value = true
+                // Cập nhật local state
+                val currentProfile = _fetchedUserInfo.value
+                _fetchedUserInfo.value = currentProfile?.copy(aiChatTone = finalTone)
+                Log.d("NotificationsViewModel", "AI Tone saved: $finalTone")
+            }
+            .addOnFailureListener { e ->
+                _isSavingAiTone.value = false
+                _errorMessage.value = "Lỗi khi lưu phong cách AI: ${e.message}"
+            }
+    }
+
+    // --- Các hàm xử lý event (giữ lại clearErrorMessage, thêm event cho AI Tone) ---
+    fun clearErrorMessage() {
+        _errorMessage.value = null
+    }
+    fun eventPersonalInfoSaveSuccessShown() { // Đổi tên từ eventSaveSuccessShown
+        _personalInfoSaveSuccess.value = false
+    }
+    fun eventAiToneSaveSuccessShown() { // Hàm mới
+        _aiToneSaveSuccess.value = false
+    }
 }
