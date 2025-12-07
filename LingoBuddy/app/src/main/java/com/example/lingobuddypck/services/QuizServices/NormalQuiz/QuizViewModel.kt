@@ -1,9 +1,9 @@
-package com.example.lingobuddypck.Services.QuizService.NormalQuiz
+package com.example.lingobuddypck.services.QuizServices.NormalQuiz
 
 import androidx.lifecycle.LiveData
-import com.example.lingobuddypck.Services.AIGradingResult
-import com.example.lingobuddypck.Services.QuestionData
-import com.example.lingobuddypck.Services.UserAnswer
+import com.example.lingobuddypck.services.AIGradingResult
+import com.example.lingobuddypck.services.QuestionData
+import com.example.lingobuddypck.services.UserAnswer
 
 interface QuizViewModel {
     val isLoading: LiveData<Boolean>

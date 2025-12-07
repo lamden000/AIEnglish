@@ -1,4 +1,4 @@
-package com.example.lingobuddypck.Services.QuizService.NormalQuiz
+package com.example.lingobuddypck.services.QuizServices.NormalQuiz
 
 
 import android.content.Context
@@ -17,7 +17,6 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
 
-import com.example.lingobuddypck.services.QuestionData
 import com.example.lingobuddypck.services.UserAnswer
 import com.example.lingobuddypck.R
 import com.example.lingobuddypck.repository.FirebaseWordRepository

@@ -40,8 +40,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lingobuddypck.R
 import com.example.lingobuddypck.ViewModel.ImageLearningViewModel
-import com.example.lingobuddypck.Repository.FirebaseWordRepository
-import com.example.lingobuddypck.Services.Message
+import com.example.lingobuddypck.repository.FirebaseWordRepository
+import com.example.lingobuddypck.services.Message
 import com.example.lingobuddypck.adapter.ChatAdapter
 import com.example.lingobuddypck.data.ImageQuiz
 import com.example.lingobuddypck.data.ImageQuizQuestion

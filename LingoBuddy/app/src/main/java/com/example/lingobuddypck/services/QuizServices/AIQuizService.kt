@@ -1,14 +1,13 @@
-package com.example.lingobuddypck.Services.QuizService
+package com.example.lingobuddypck.services.QuizServices
 import android.util.Log
-import com.example.lingobuddypck.Services.AIGradingResult
-import com.example.lingobuddypck.Services.AIQuestionResponse
-import com.example.lingobuddypck.Services.ChatRequest
-import com.example.lingobuddypck.Services.Message
-import com.example.lingobuddypck.Services.PassageQuizData
-import com.example.lingobuddypck.Services.QuestionData
-import com.example.lingobuddypck.Services.ReadingComprehensionQuizData
-import com.example.lingobuddypck.Services.TogetherApi
-import com.example.lingobuddypck.Services.UserAnswer
+import com.example.lingobuddypck.services.AIGradingResult
+import com.example.lingobuddypck.services.AIQuestionResponse
+import com.example.lingobuddypck.services.ChatRequest
+import com.example.lingobuddypck.services.Message
+import com.example.lingobuddypck.services.PassageQuizData
+import com.example.lingobuddypck.services.ReadingComprehensionQuizData
+import com.example.lingobuddypck.services.TogetherApi
+import com.example.lingobuddypck.services.UserAnswer
 import com.google.gson.Gson
 import retrofit2.awaitResponse
 

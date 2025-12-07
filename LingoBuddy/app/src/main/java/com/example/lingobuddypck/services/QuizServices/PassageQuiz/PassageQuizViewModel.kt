@@ -1,4 +1,4 @@
-package com.example.lingobuddypck.Services.QuizService.PassageQuiz
+package com.example.lingobuddypck.services.QuizServices.PassageQuiz
 
 import androidx.lifecycle.LiveData
 import com.example.lingobuddypck.data.DisplayableQuizContent

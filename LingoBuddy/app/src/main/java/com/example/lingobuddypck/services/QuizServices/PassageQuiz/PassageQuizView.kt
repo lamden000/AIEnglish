@@ -1,4 +1,4 @@
-package com.example.lingobuddypck.Services.QuizService.PassageQuiz
+package com.example.lingobuddypck.services.QuizServices.PassageQuiz
 
 import android.widget.Button
 import android.widget.EditText

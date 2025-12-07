@@ -1,4 +1,4 @@
-package com.example.lingobuddypck.Services.QuizService.PassageQuiz
+package com.example.lingobuddypck.services.QuizServices.PassageQuiz
 
 import android.content.Context
 import android.graphics.Color
@@ -14,12 +14,12 @@ import android.widget.Toast
 import androidx.core.text.HtmlCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
-import com.example.lingobuddypck.services.QuestionData
 import com.example.lingobuddypck.services.UserAnswer
 import com.example.lingobuddypck.R
 import com.example.lingobuddypck.repository.FirebaseWordRepository
 import com.example.lingobuddypck.data.DisplayableQuizContent
 import com.example.lingobuddypck.data.QuizDisplayType
+import com.example.lingobuddypck.services.QuestionData
 import com.example.lingobuddypck.utils.TaskManager
 import com.example.lingobuddypck.utils.TopicUtils
 import com.example.lingobuddypck.utils.enableSelectableSaveAction
