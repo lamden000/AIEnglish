@@ -14,9 +14,8 @@ import kotlin.text.trimIndent
 
 class PronunciationAiService(
     private val retrofitClient: TogetherApi,
-    private val gson: Gson
+    private val gson: Gson,
 ) {
-
     private fun removeThinkTags(text: String): String {
         // Regex to find <think>...</think> including content, non-greedy
         val regex = "<think>[\\s\\S]*?<\\/think>".toRegex()

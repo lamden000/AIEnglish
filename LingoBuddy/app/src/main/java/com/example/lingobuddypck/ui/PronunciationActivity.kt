@@ -8,7 +8,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.lingobuddypck.network.RetrofitClient
 import com.example.lingobuddypck.services.PronunciationAiService
-import com.example.lingobuddypck.viewmodel.PronunciationViewModel
+import com.example.lingobuddypck.ViewModel.PronunciationViewModel
 import com.google.android.material.textfield.TextInputEditText
 import com.google.gson.Gson
 import kotlin.getValue
