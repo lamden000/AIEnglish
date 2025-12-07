@@ -2,6 +2,7 @@ package com.example.lingobuddypck.services
 
 import android.net.Uri
 import android.os.Parcelable
+import com.google.gson.annotations.SerializedName
 import kotlinx.parcelize.Parcelize
 import retrofit2.Call
 import retrofit2.http.Body
@@ -100,4 +101,27 @@ data class AIGradingResult(
 data class QuestionFeedback(
     val status: String, // Expected "correct" or "incorrect"
     val explanation: String? = null // This field is optional and will be null if not present (like for "correct" answers)
+)
+
+data class ReadingComprehensionQuizData(
+    val passage: String,
+    val questions: List<ReadingComprehensionQuestion>
+)
+
+data class ReadingComprehensionQuestion(
+    val id: String, // Ví dụ: "q1", "q2"
+    @SerializedName("question_text") // Tên trường trong JSON từ AI
+    val question_text: String, // Tên thuộc tính Kotlin, giữ là snake_case để dễ tương thích
+    val options: Map<String, String>, // Ví dụ: {"a": "Option A", "b": "Option B", ...}
+    @SerializedName("correct_answer") // Tên trường trong JSON từ AI
+    val correct_answer: String // Tên thuộc tính Kotlin
+)
+
+data class AIQuestionResponse(
+    val questions: List<QuestionData>
+)
+
+data class PassageQuizData(
+    val passage: String,
+    val questions: List<QuestionData>
 )

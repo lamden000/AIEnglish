@@ -8,10 +8,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.lingobuddypck.services.QuizService.AiQuizService
 import com.example.lingobuddypck.services.AIGradingResult
-import com.example.lingobuddypck.services.PassageQuizData
-import com.example.lingobuddypck.services.QuestionData
-import com.example.lingobuddypck.services.UserAnswer
 import com.example.lingobuddypck.services.QuizService.PassageQuiz.PassageQuizViewModel
+import com.example.lingobuddypck.services.UserAnswer
 import com.example.lingobuddypck.data.DisplayableQuizContent
 import com.example.lingobuddypck.data.QuizDisplayType
 import kotlinx.coroutines.delay

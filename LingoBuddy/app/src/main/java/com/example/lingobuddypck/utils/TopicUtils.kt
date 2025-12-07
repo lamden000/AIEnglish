@@ -1,9 +1,7 @@
 package com.example.lingobuddypck.utils
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.util.Log
-import java.time.LocalDate
 import kotlin.collections.random
 import kotlin.io.bufferedReader
 import kotlin.io.useLines
