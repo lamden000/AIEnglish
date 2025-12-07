@@ -5,6 +5,7 @@ import com.example.lingobuddypck.services.AIQuestionResponse
 import com.example.lingobuddypck.services.ChatRequest
 import com.example.lingobuddypck.services.Message
 import com.example.lingobuddypck.services.PassageQuizData
+import com.example.lingobuddypck.services.QuestionData
 import com.example.lingobuddypck.services.ReadingComprehensionQuizData
 import com.example.lingobuddypck.services.TogetherApi
 import com.example.lingobuddypck.services.UserAnswer
