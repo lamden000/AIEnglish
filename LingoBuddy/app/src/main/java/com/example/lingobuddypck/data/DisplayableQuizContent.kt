@@ -1,5 +1,7 @@
 package com.example.lingobuddypck.data
 
+import com.example.lingobuddypck.services.QuestionData
+
 data class DisplayableQuizContent(
     val passage: String,
     val questions: List<QuestionData>, // Sử dụng QuestionData chung
