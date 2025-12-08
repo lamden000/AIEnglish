@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lingobuddypck.R
-import com.example.lingobuddypck.Repository.SavedWord
+import com.example.lingobuddypck.repository.SavedWord
 
 sealed class SavedWordListItem {
     data class Header(val letter: Char) : SavedWordListItem()
