@@ -17,10 +17,12 @@ import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lingobuddypck.services.Message
 import com.example.lingobuddypck.R
+import com.example.lingobuddypck.repository.FirebaseWordRepository
 
 class ChatAdapter(
     private val messages: MutableList<Message>,
     private val context: Context, // Giữ lại theo code gốc của bạn
+    private val firebaseWordRepository: FirebaseWordRepository,
     private val onSpeakClick: (String?) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 

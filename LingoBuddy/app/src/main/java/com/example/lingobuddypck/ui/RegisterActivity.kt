@@ -14,7 +14,6 @@ import com.example.lingobuddypck.ViewModel.RegisterViewModel
 class RegisterActivity : AppCompatActivity() {
 
     private lateinit var viewModel: RegisterViewModel
-
     private lateinit var emailEditText: EditText
     private lateinit var passwordEditText: EditText
     private lateinit var repeatPasswordEditText: EditText

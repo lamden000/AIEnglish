@@ -44,7 +44,6 @@ import com.example.lingobuddypck.repository.FirebaseWordRepository
 import com.example.lingobuddypck.services.Message
 import com.example.lingobuddypck.adapter.ChatAdapter
 import com.example.lingobuddypck.data.ImageQuiz
-import com.example.lingobuddypck.data.ImageQuizQuestion
 import com.example.lingobuddypck.utils.TaskManager
 import java.io.File
 import java.io.IOException
@@ -238,47 +237,8 @@ class ImageLearningActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             sendButton.text = if (it) "Sending..." else "Send"
         }
 
-        setupQuizUI()
-        observeQuizState()
-
         closeImageButton.setOnClickListener {
             clearImage()
-        }
-    }
-
-    private fun setupQuizUI() {
-        generateQuizButton.setOnClickListener {
-            if (selectedImageUri != null) {
-                viewModel.generateQuizFromImage(this, selectedImageUri!!)
-                imagePreviewContainer.visibility = View.GONE
-            }
-        }
-
-        submitQuizButton.setOnClickListener {
-            submitQuizAnswers()
-        }
-    }
-
-    private fun observeQuizState() {
-        viewModel.isGeneratingQuiz.observe(this) { isGenerating ->
-            generateQuizButton.isEnabled = selectedImageUri != null && !isGenerating
-            if (isGenerating) {
-                showQuizLoadingState()
-            }
-        }
-
-        viewModel.currentQuiz.observe(this) { quiz ->
-            if (quiz != null) {
-                showQuiz(quiz)
-            } else {
-                hideQuiz()
-            }
-        }
-
-        viewModel.quizScore.observe(this) { score ->
-            if (score != null) {
-                showQuizResults(score.first, score.second)
-            }
         }
     }
 
@@ -294,165 +254,6 @@ class ImageLearningActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Hide input and action buttons
         inputContainer.visibility = View.GONE
         actionButtonsContainer.visibility = View.GONE
-    }
-
-    private fun showQuiz(quiz: ImageQuiz) {
-        recyclerView.visibility = View.GONE
-        quizContainerView.visibility = View.VISIBLE
-        quizContainer.visibility = View.VISIBLE
-        quizQuestionsContainer.removeAllViews()
-        questionViews.clear()
-
-        // Set the quiz image
-        selectedImageUri?.let { uri ->
-            quizImageView.setImageURI(uri)
-            quizImageView.visibility = View.VISIBLE
-        }
-
-        // Add questions (skipping the description)
-        quiz.questions.forEach { question ->
-            addQuestionToLayout(question)
-        }
-
-        submitQuizButton.visibility = View.VISIBLE
-        
-        // Hide input and action buttons
-        inputContainer.visibility = View.GONE
-        actionButtonsContainer.visibility = View.GONE
-    }
-
-    private fun addQuestionToLayout(question: ImageQuizQuestion) {
-        val questionLayout = LayoutInflater.from(this)
-            .inflate(R.layout.item_quiz_question, quizQuestionsContainer, false)
-
-        val questionText = questionLayout.findViewById<TextView>(R.id.questionText)
-        val optionsGroup = questionLayout.findViewById<RadioGroup>(R.id.optionsGroup)
-
-        questionText.text = question.question
-        
-        question.options.forEach { (key, text) ->
-            val radioButton = RadioButton(this).apply {
-                id = View.generateViewId()
-                this.text = "$key. $text"
-                layoutParams = RadioGroup.LayoutParams(
-                    RadioGroup.LayoutParams.MATCH_PARENT,
-                    RadioGroup.LayoutParams.WRAP_CONTENT
-                )
-                setPadding(16, 16, 16, 16)
-            }
-            optionsGroup.addView(radioButton)
-        }
-
-        questionViews[question.id] = optionsGroup
-        quizQuestionsContainer.addView(questionLayout)
-    }
-
-    private fun submitQuizAnswers() {
-        val answers = mutableMapOf<String, String>()
-        
-        questionViews.forEach { (questionId, radioGroup) ->
-            val selectedId = radioGroup.checkedRadioButtonId
-            if (selectedId != -1) {
-                val radioButton = findViewById<RadioButton>(selectedId)
-                val answerKey = radioButton.text.toString().substringBefore(".").trim()
-                answers[questionId] = answerKey.lowercase()
-            }
-        }
-
-        if (answers.size < questionViews.size) {
-            Toast.makeText(this, "Vui lòng trả lời tất cả câu hỏi", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        viewModel.submitQuizAnswers(answers)
-    }
-
-    private fun showQuizResults(score: Int, total: Int) {
-        val quiz = viewModel.currentQuiz.value ?: return
-        val quizResult = viewModel.quizResult.value ?: return
-        
-        quiz.questions.forEach { question ->
-            val radioGroup = questionViews[question.id] ?: return@forEach
-            val selectedId = radioGroup.checkedRadioButtonId
-            if (selectedId != -1) {
-                val radioButton = findViewById<RadioButton>(selectedId)
-                val selectedAnswer = radioButton.text.toString().substringBefore(".").trim().lowercase()
-                val feedback = quizResult.feedback[question.id]
-                
-                // Add feedback view below the question
-                val feedbackView = TextView(this).apply {
-                    val isCorrect = feedback?.status == "correct"
-                    text = if (isCorrect) {
-                        "✅ Chính xác!"
-                    } else {
-                        val correctOption = question.options[question.correctAnswer] ?: ""
-                        "❌ Đáp án đúng là: ${question.correctAnswer.uppercase()}. $correctOption\n\n${feedback?.explanation ?: ""}"
-                    }
-                    setTextColor(if (isCorrect) Color.GREEN else Color.RED)
-                    setPadding(32, 8, 32, 16)
-                }
-                
-                // Find the question layout and add feedback
-                val questionLayout = radioGroup.parent as ViewGroup
-                questionLayout.addView(feedbackView)
-                
-                // Disable all radio buttons after showing results
-                for (i in 0 until radioGroup.childCount) {
-                    radioGroup.getChildAt(i).isEnabled = false
-                }
-            }
-        }
-
-        // Show final score with percentage
-        val percentage = (score.toFloat() / total * 100).toInt()
-
-        // Check if score is above 80% and it's a daily task
-        if (percentage >= 80) {
-            if (TaskManager.isTaskInToday(this, TaskManager.TaskType.IMAGE_QUIZ_SCORE)) {
-                // Show a special dialog for task completion
-                AlertDialog.Builder(this)
-                    .setTitle("🎉 Chúc mừng!")
-                    .setMessage("Bạn đã hoàn thành xuất sắc bài quiz với điểm số $score/$total ($percentage%)!\n\nBạn đã hoàn thành nhiệm vụ hàng ngày!")
-                    .setPositiveButton("Tuyệt vời") { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                    .show()
-            } else {
-                // Show regular score dialog
-                AlertDialog.Builder(this)
-                    .setTitle("Kết quả")
-                    .setMessage("Bạn đã trả lời đúng $score/$total câu! ($percentage%)")
-                    .setPositiveButton("OK") { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                    .show()
-            }
-            // Mark task as completed after showing dialog
-            TaskManager.markTaskCompleted(this, TaskManager.TaskType.IMAGE_QUIZ_SCORE)
-        } else {
-            // Show regular score dialog for non-passing scores
-            AlertDialog.Builder(this)
-                .setTitle("Kết quả")
-                .setMessage("Bạn đã trả lời đúng $score/$total câu! ($percentage%)")
-                .setPositiveButton("OK") { dialog, _ ->
-                    dialog.dismiss()
-                }
-                .show()
-        }
-
-        // Disable submit button after showing results
-        submitQuizButton.isEnabled = false
-        
-        // Add a "Try Again" button
-        submitQuizButton.text = "Kết thúc"
-        submitQuizButton.isEnabled = true
-        submitQuizButton.setOnClickListener {
-            hideQuiz()
-            clearImage()
-            viewModel.clearQuiz()
-            submitQuizButton.text = "Nộp bài"
-            submitQuizButton.setOnClickListener { submitQuizAnswers() }
-        }
     }
 
     private fun hideQuiz() {
