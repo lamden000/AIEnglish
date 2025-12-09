@@ -14,8 +14,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-
-
 class ChatViewModel : ViewModel() {
 
     private val maxHistorySize = 8
