@@ -6,12 +6,13 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.lingobuddypck.services.QuizService.AiQuizService
+import com.example.lingobuddypck.services.QuizServices.AiQuizService
 import com.example.lingobuddypck.services.AIGradingResult
-import com.example.lingobuddypck.services.QuizService.PassageQuiz.PassageQuizViewModel
+import com.example.lingobuddypck.services.QuizServices.PassageQuiz.PassageQuizViewModel
 import com.example.lingobuddypck.services.UserAnswer
 import com.example.lingobuddypck.data.DisplayableQuizContent
 import com.example.lingobuddypck.data.QuizDisplayType
+import com.example.lingobuddypck.services.QuestionData
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
