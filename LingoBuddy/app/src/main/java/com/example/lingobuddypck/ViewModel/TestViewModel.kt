@@ -15,7 +15,6 @@ import com.example.lingobuddypck.services.QuizServices.AiQuizService
 import com.example.lingobuddypck.services.QuizServices.NormalQuiz.QuizViewModel
 import kotlinx.coroutines.delay
 
-
 class TestViewModel(
     private val aiQuizService: AiQuizService
 ) : ViewModel(), QuizViewModel {

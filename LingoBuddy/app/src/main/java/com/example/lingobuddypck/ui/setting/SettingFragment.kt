@@ -19,7 +19,6 @@ import com.example.lingobuddypck.ui.LoginActivity
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 
-
 class SettingFragment : Fragment() {
 
     private var _binding: FragmentSettingBinding? = null // Giả sử bạn dùng ViewBinding
