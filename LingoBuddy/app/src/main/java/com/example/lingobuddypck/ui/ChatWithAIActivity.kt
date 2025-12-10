@@ -25,6 +25,7 @@ import android.speech.tts.Voice
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.example.lingobuddypck.R
+import com.example.lingobuddypck.repository.FirebaseWordRepository
 import com.example.lingobuddypck.services.Message
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.nl.languageid.LanguageIdentification
@@ -71,7 +72,7 @@ class ChatWithAIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         micButton = findViewById(R.id.micButton)
 
 
-        adapter = ChatAdapter(ArrayList(), this, onSpeakClick = { text ->
+        adapter = ChatAdapter(ArrayList(), this, FirebaseWordRepository(), onSpeakClick = { text ->
             lifecycleScope.launch {
                 speakMultiLanguageText(text)
             }

@@ -60,7 +60,7 @@ class ChatViewModel : ViewModel() {
         Log.d("ChatViewModel", "Gửi tới AI với system message: ${historyForAI.firstOrNull { it.role == "system" }?.content}")
 
         val request = ChatRequest(
-            model = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+            model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
             messages = historyForAI,
         )
 
