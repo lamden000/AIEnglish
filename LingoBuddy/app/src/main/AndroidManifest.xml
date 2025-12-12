@@ -22,7 +22,24 @@
         <activity
             android:name=".ui.RegisterActivity"
             android:exported="false" />
-
+        <activity
+            android:name=".ui.NavigationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.PassageQuizActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ChatWithAIActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ImageLearningActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.PronunciationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.RolePlayActivity"
+            android:exported="false" />
         <activity
             android:name=".ui.LoginActivity"
             android:exported="true">
