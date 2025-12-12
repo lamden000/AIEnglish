@@ -29,14 +29,47 @@ class AiQuizService(
 
     // Helper function to extract JSON (keep it inside the service)
     private fun extractJson(rawResponse: String): String {
-        val jsonStartIndex = rawResponse.indexOfFirst { it == '{' || it == '[' }
-        val jsonEndIndex = rawResponse.indexOfLast { it == '}' || it == ']' }
-
-        return if (jsonStartIndex != -1 && jsonEndIndex != -1 && jsonEndIndex > jsonStartIndex) {
-            rawResponse.substring(jsonStartIndex, jsonEndIndex + 1)
-        } else {
-            rawResponse // Or handle error appropriately
+        // 1. Lấy phần JSON bắt đầu từ dấu '{'
+        val startIndex = rawResponse.indexOf('{')
+        if (startIndex == -1) {
+            throw Exception("Không tìm thấy JSON trong phản hồi AI.")
         }
+
+        // 2. Tìm vị trí kết thúc JSON bằng cách đếm ngoặc
+        var braceCount = 0
+        var endIndex = -1
+
+        for (i in startIndex until rawResponse.length) {
+            val ch = rawResponse[i]
+
+            if (ch == '{') braceCount++
+            if (ch == '}') braceCount--
+
+            if (braceCount == 0) {
+                endIndex = i
+                break
+            }
+        }
+
+        if (endIndex == -1) {
+            throw Exception("JSON không hợp lệ (ngoặc không đóng).")
+        }
+
+        var json = rawResponse.substring(startIndex, endIndex + 1)
+
+        // 3. Sửa lỗi JSON phổ biến do AI gây ra (dấu ngoặc kép không escape)
+        json = sanitizeJson(json)
+
+        return json
+    }
+
+    private fun sanitizeJson(json: String): String {
+        return json
+            // Escape dấu " bên trong chuỗi explanation
+            .replace(Regex("\"explanation\"\\s*:\\s*\"([^\"]*)\"")) { match ->
+                val content = match.groupValues[1]
+                val fixed = content.replace("\"", "'")
+                "\"explanation\": \"$fixed\"" }
     }
 
     /**
@@ -56,7 +89,7 @@ class AiQuizService(
             For each question, provide:
             - The question text
             - The four answer choices
-            - The correct answer key (a, b, c, or d)
+            - The random correct answer key (a, b, c, or d)
 
             Make sure:
             - All correct answers strictly follow modern English grammar.
@@ -92,7 +125,7 @@ class AiQuizService(
         """.trimIndent()
 
         val messages = listOf(systemMessageForTestGeneration, Message("user", prompt))
-        val model = if (isCustom) "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free" else "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free" // Model selection logic here
+        val model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo" // Model selection logic here
         val request = ChatRequest(model, messages = messages) // Assuming ChatRequest is a data class
 
         val response = retrofitClient.chatWithAI(request).awaitResponse() // Assuming chatWithAI is in RetrofitClient
@@ -167,7 +200,7 @@ class AiQuizService(
     """.trimIndent()
 
         val messages = listOf(systemMessageForTestGeneration, Message("user", prompt))
-        val model = if (isCustom) "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free" else "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+        val model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
         val request = ChatRequest(model, messages = messages)
 
         val response = retrofitClient.chatWithAI(request).awaitResponse()
@@ -249,7 +282,7 @@ class AiQuizService(
     """.trimIndent()
 
         val messages = listOf(systemMessageForTestGeneration, Message("user", prompt))
-        val model = if (isCustom) "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free" else "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+        val model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
         val request = ChatRequest(model, messages = messages)
 
         val response = retrofitClient.chatWithAI(request).awaitResponse()
@@ -341,7 +374,7 @@ class AiQuizService(
 
         val messages = listOf(systemMessageForGrading, Message("user", gradingPrompt))
         val request = ChatRequest(
-            model = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free", // Or parameterize the model
+            model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo", // Or parameterize the model
             messages = messages,
         )
 
@@ -359,6 +392,7 @@ class AiQuizService(
             val actualJson = extractJson(responseJson)
             try {
                 val result = gson.fromJson(actualJson, AIGradingResult::class.java)
+                result.score = result.feedback.values.count { it.status == "correct" }
                 return result
             } catch (jsonException: Exception) {
                 throw Exception("Lỗi xử lý kết quả chấm điểm JSON từ AI: ${jsonException.message}", jsonException)

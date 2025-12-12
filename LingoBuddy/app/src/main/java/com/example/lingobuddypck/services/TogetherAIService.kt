@@ -93,7 +93,7 @@ data class UserAnswer(
 )
 
 data class AIGradingResult(
-    val score: Int,
+    var score: Int,
     val total_questions: Int,
     val feedback: Map<String, QuestionFeedback> // Optional: {"q1": "correct", "q2": "incorrect"}
 )

@@ -32,7 +32,7 @@ class PronunciationAiService(
             Sentence:
         """.trimIndent()
 
-        val model = if (isCustom) "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free" else "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+        val model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
 
         val request = ChatRequest(
             model, messages = listOf(
@@ -73,7 +73,7 @@ class PronunciationAiService(
             ```
         """.trimIndent()
 
-        val request = ChatRequest(model = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free", messages = listOf(
+        val request = ChatRequest(model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo", messages = listOf(
             Message("user", prompt)
         )
         )
