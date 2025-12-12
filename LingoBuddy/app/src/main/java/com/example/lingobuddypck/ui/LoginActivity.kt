@@ -62,7 +62,7 @@ class LoginActivity : AppCompatActivity() {
 
         if (auth.currentUser != null && shouldRememberUser) {
             // User is logged in and chose to be remembered
-            startActivity(Intent(this, MainActivity::class.java))
+            startActivity(Intent(this, NavigationActivity::class.java))
             finish()
             return // Skip the rest of onCreate
         } else if (auth.currentUser != null && !shouldRememberUser) {
@@ -142,7 +142,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
-        startActivity(Intent(this, MainActivity::class.java))
+        startActivity(Intent(this, NavigationActivity::class.java))
         finish()
     }
 }
