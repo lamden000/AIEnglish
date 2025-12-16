@@ -47,7 +47,7 @@ class RolePlayChatViewModel(
 
         val recentHistory = getRecentHistory()
         val request = ChatRequest(
-            model = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+            model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
             messages = recentHistory,
         )
 
