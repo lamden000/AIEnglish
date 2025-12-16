@@ -6,16 +6,20 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.lingobuddypck.repository.FirebaseWordRepository
-import com.example.lingobuddypck.repository.SavedWord
 import com.example.lingobuddypck.services.AIGradingResult
 import com.example.lingobuddypck.services.QuestionData
+import com.example.lingobuddypck.services.UserAnswer
 import com.example.lingobuddypck.services.QuizServices.AiQuizService
 import com.example.lingobuddypck.services.QuizServices.NormalQuiz.QuizViewModel
-import com.example.lingobuddypck.services.UserAnswer
+import com.example.lingobuddypck.repository.FirebaseWordRepository
+import com.example.lingobuddypck.repository.SavedWord
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * Lớp Event để xử lý các sự kiện chỉ muốn quan sát một lần,
+ * ví dụ như hiển thị Toast hoặc điều hướng.
+ */
 open class Event<out T>(private val content: T) {
     var hasBeenHandled = false
         private set // Cho phép đọc từ bên ngoài nhưng không cho phép ghi
