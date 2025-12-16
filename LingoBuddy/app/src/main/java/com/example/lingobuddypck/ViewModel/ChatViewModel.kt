@@ -8,11 +8,14 @@ import com.example.lingobuddypck.network.RetrofitClient
 import com.example.lingobuddypck.services.ChatRequest
 import com.example.lingobuddypck.services.ChatResponse
 import com.example.lingobuddypck.services.Message
+import com.example.lingobuddypck.data.UserProfileBundle
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+
+
 
 class ChatViewModel : ViewModel() {
 
@@ -37,8 +40,91 @@ class ChatViewModel : ViewModel() {
 
     private val fullHistory = mutableListOf<Message>()
 
+    private var fetchedUserPersonalDetails: UserProfileBundle? = null
+    private var currentAiTone: String = "trung lập và thân thiện"
+
+    private var initialSessionSetupDone = false
+
+    init {
+        initializeChatSessionData()
+    }
+
+    private fun initializeChatSessionData() {
+        if (initialSessionSetupDone) return
+        isLoading.value = true
+        isWaitingForResponse.value=false
+
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            Log.d("ChatViewModel", "Người dùng chưa đăng nhập. Sử dụng cài đặt mặc định cho chat.")
+            this.fetchedUserPersonalDetails = null
+            this.currentAiTone = "trung lập và thân thiện"
+            rebuildSystemMessageAndFinalizeSetup()
+            return
+        }
+
+        db.collection("users").document(userId).get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    Log.d("ChatViewModel", "Tìm thấy document người dùng cho phiên chat.")
+                    // Lấy thông tin cá nhân khác
+                    fetchedUserPersonalDetails = UserProfileBundle(
+                        name = document.getString("name"),
+                        job = document.getString("job"),
+                        interest = document.getString("interest"),
+                        otherInfo = document.getString("otherInfo")
+                    )
+                    currentAiTone = document.getString("aiChatTone") ?: "trung lập và thân thiện"
+                    Log.d("ChatViewModel", "Phong cách AI được fetch từ Firebase: $currentAiTone")
+
+                } else {
+                    Log.d("ChatViewModel", "Không tìm thấy document người dùng. Sử dụng cài đặt mặc định.")
+                    fetchedUserPersonalDetails = null
+                    currentAiTone = "trung lập và thân thiện"
+                }
+                rebuildSystemMessageAndFinalizeSetup()
+            }
+            .addOnFailureListener { exception ->
+                Log.w("ChatViewModel", "Lỗi khi fetch dữ liệu người dùng cho phiên chat", exception)
+                fetchedUserPersonalDetails = null
+                currentAiTone = "trung lập và thân thiện"
+                rebuildSystemMessageAndFinalizeSetup()
+            }
+    }
+
     private fun rebuildSystemMessageAndFinalizeSetup() {
+        rebuildSystemMessageInternal() // Gọi hàm nội bộ để xây dựng system message
+        if (!initialSessionSetupDone) {
+            setupInitialMessages() // Chỉ setup tin nhắn chào mừng lần đầu
+            initialSessionSetupDone = true
+        }
         isLoading.value = false // Kết thúc trạng thái loading ban đầu
+    }
+
+    private fun rebuildSystemMessageInternal() {
+        var newSystemContent = systemMessageContentBase
+
+        // Thêm thông tin cá nhân của người dùng (nếu có)
+        fetchedUserPersonalDetails?.let { details ->
+            val userInfoParts = mutableListOf<String>()
+            if (!details.name.isNullOrBlank()) userInfoParts.add("- the user's name: ${details.name}")
+            if (!details.job.isNullOrBlank()) userInfoParts.add("- Job: ${details.job}")
+            if (!details.interest.isNullOrBlank()) userInfoParts.add("- Interest: ${details.interest}")
+            if (!details.otherInfo.isNullOrBlank()) userInfoParts.add("- Additional info: ${details.otherInfo}")
+
+            if (userInfoParts.isNotEmpty()) {
+                newSystemContent += "\n\nthe user's info:\n" + userInfoParts.joinToString("\n")
+            }
+        }
+
+        if (currentAiTone.isNotBlank()) {
+            newSystemContent += "\n\nTry to keep the conversation in this style: $currentAiTone."
+        } else {
+            newSystemContent += "\n\nTry to keep the conversation in this style: trung lập và thân thiện."
+        }
+
+        currentSystemMessageContent = newSystemContent
+        Log.d("ChatViewModel", "System message đã được xây dựng: $currentSystemMessageContent")
     }
 
     private fun setupInitialMessages() {
@@ -60,7 +146,7 @@ class ChatViewModel : ViewModel() {
         Log.d("ChatViewModel", "Gửi tới AI với system message: ${historyForAI.firstOrNull { it.role == "system" }?.content}")
 
         val request = ChatRequest(
-            model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+            model = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
             messages = historyForAI,
         )
 
