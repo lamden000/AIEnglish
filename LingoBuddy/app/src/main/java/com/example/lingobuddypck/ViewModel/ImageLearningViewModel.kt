@@ -225,4 +225,32 @@ class ImageLearningViewModel : ViewModel(){
         _quizScore.value = null
         _quizResult.value = null
     }
+
+    fun submitQuizAnswers(answers: Map<String, String>) {
+        val quiz = _currentQuiz.value ?: return
+        var correctAnswers = 0
+        val feedback = mutableMapOf<String, QuizFeedback>()
+
+        quiz.questions.forEach { question ->
+            val userAnswer = answers[question.id]
+            val isCorrect = userAnswer == question.correctAnswer
+
+            if (isCorrect) {
+                correctAnswers++
+                feedback[question.id] = QuizFeedback(status = "correct")
+            } else {
+                feedback[question.id] = QuizFeedback(
+                    status = "incorrect",
+                    explanation = question.explanation
+                )
+            }
+        }
+
+        _quizResult.value = QuizResult(
+            score = correctAnswers,
+            totalQuestions = quiz.questions.size,
+            feedback = feedback
+        )
+        _quizScore.value = Pair(correctAnswers, quiz.questions.size)
+    }
 }
