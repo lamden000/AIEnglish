@@ -5,12 +5,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.viewModels
 import com.example.lingobuddypck.network.RetrofitClient
 import com.example.lingobuddypck.R
-import com.example.lingobuddypck.services.QuizServices.AiQuizService
-import com.example.lingobuddypck.services.QuizServices.PassageQuiz.PassageQuizUIManager
 import com.example.lingobuddypck.ViewModel.PassageQuizViewModelImpl
 import com.example.lingobuddypck.repository.FirebaseWordRepository
-import com.example.lingobuddypck.services.QuizServices.PassageQuiz.PassageQuizViews
+import com.example.lingobuddypck.utils.TaskManager
 import com.google.gson.Gson
+import androidx.recyclerview.widget.LinearLayoutManager
+import android.view.View
+import com.example.lingobuddypck.adapter.TopicSuggestionAdapter
+import com.example.lingobuddypck.services.QuizServices.AiQuizService
+import com.example.lingobuddypck.services.QuizServices.PassageQuiz.PassageQuizUIManager
+import com.example.lingobuddypck.services.QuizServices.PassageQuiz.PassageQuizViews
 
 class PassageQuizActivity : AppCompatActivity() {
 
@@ -42,6 +46,20 @@ class PassageQuizActivity : AppCompatActivity() {
             customTopicEditTxt = findViewById(R.id.customTopicEditTxt),
             initialStateContainer = findViewById(R.id.initialStateContainer)
         )
+        // Setup horizontal topic suggestions (5 random topics). Tapping fills the topic EditText.
+        views.recyclerView?.let { rv ->
+            val topicsList = try {
+                assets.open("topics.txt").bufferedReader().useLines { it.toList() }.shuffled().distinct().take(5)
+            } catch (e: Exception) {
+                listOf("General English", "Travel", "Food", "Business", "Technology")
+            }
+            rv.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+            rv.adapter = TopicSuggestionAdapter(topicsList) { topic ->
+                views.customTopicEditTxt?.setText(topic)
+            }
+            // Make suggestions visible in the initial screen
+            rv.visibility = View.VISIBLE
+        }
         intent.getStringExtra("topic")?.let { topic ->
             views.customTopicEditTxt?.setText(topic)
             // Automatically start quiz with this topic
