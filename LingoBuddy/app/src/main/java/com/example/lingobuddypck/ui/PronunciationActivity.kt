@@ -10,12 +10,14 @@ import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import java.util.Locale
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -38,11 +40,13 @@ class PronunciationActivity : AppCompatActivity() {
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var btnStart: Button
     private lateinit var btnGenerateReference: Button
+    private lateinit var btnPlayReference: Button
     private lateinit var etTopicInput: TextInputEditText
     private lateinit var txtResult: TextView
     private lateinit var tvReference: TextView
     private lateinit var txtStatus: TextView
     private lateinit var progressBar: ProgressBar
+    private var textToSpeech: TextToSpeech? = null
 
     private val REQUEST_RECORD_AUDIO_PERMISSION = 200
 
@@ -59,6 +63,7 @@ class PronunciationActivity : AppCompatActivity() {
 
         btnStart = findViewById(R.id.btnStart)
         btnGenerateReference = findViewById(R.id.btnGenerateReference)
+        btnPlayReference = findViewById(R.id.btnPlayReference)
         etTopicInput = findViewById(R.id.etTopicInput)
         txtResult = findViewById(R.id.txtResult)
         tvReference = findViewById(R.id.tvReferenceText)
@@ -75,6 +80,7 @@ class PronunciationActivity : AppCompatActivity() {
         checkAudioPermission()
         setupListeners()
         setupObservers()
+        setupTextToSpeech()
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizer.setRecognitionListener(createRecognitionListener())
@@ -142,6 +148,10 @@ class PronunciationActivity : AppCompatActivity() {
             } else {
                 viewModel.generateNewReferenceText(TopicUtils.getRandomTopicFromAssets(this), false)
             }
+        }
+
+        btnPlayReference.setOnClickListener {
+            playReferenceText()
         }
     }
 
@@ -224,9 +234,64 @@ class PronunciationActivity : AppCompatActivity() {
         return if (messages.isEmpty()) "" else "\n\nNhiệm vụ đã hoàn thành:\n${messages.joinToString("\n")}"
     }
 
+    private fun setupTextToSpeech() {
+        textToSpeech = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = textToSpeech?.setLanguage(Locale.US)
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "Language not supported")
+                    Toast.makeText(this, "Ngôn ngữ không được hỗ trợ", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Set up utterance progress listener
+                    textToSpeech?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+                        override fun onStart(utteranceId: String?) {
+                            Handler(Looper.getMainLooper()).post {
+                                viewModel.updateStatusMessage("Đang phát âm câu mẫu...")
+                            }
+                        }
+
+                        override fun onDone(utteranceId: String?) {
+                            Handler(Looper.getMainLooper()).post {
+                                viewModel.updateStatusMessage("Sẵn sàng.")
+                            }
+                        }
+
+                        override fun onError(utteranceId: String?) {
+                            Handler(Looper.getMainLooper()).post {
+                                viewModel.updateStatusMessage("Sẵn sàng.")
+                                Toast.makeText(this@PronunciationActivity, "Lỗi khi phát âm", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    })
+                }
+            } else {
+                Log.e("TTS", "Initialization failed")
+                Toast.makeText(this, "Không thể khởi tạo Text-to-Speech", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun playReferenceText() {
+        val referenceText = tvReference.text.toString().trim()
+        if (referenceText.isEmpty() || referenceText == "Hello, How are you today?") {
+            Toast.makeText(this, "Chưa có đoạn văn mẫu để phát", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        textToSpeech?.let { tts ->
+            tts.stop() // Dừng phát âm hiện tại nếu có
+            val utteranceId = "reference_text_${System.currentTimeMillis()}"
+            tts.speak(referenceText, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+        } ?: run {
+            Toast.makeText(this, "Text-to-Speech chưa sẵn sàng", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         speechRecognizer.destroy()
+        textToSpeech?.stop()
+        textToSpeech?.shutdown()
     }
 
     private fun setupObservers() {
