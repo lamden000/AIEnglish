@@ -20,6 +20,7 @@ import com.example.lingobuddypck.services.Message
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Call
@@ -27,11 +28,9 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import kotlin.collections.get
-import kotlin.collections.orEmpty
-import kotlin.collections.toMutableList
 
-class ImageLearningViewModel : ViewModel(){
+class ImageLearningViewModel : ViewModel() {
+
     private val _chatMessages = MutableLiveData<List<Message>>()
     val chatMessages: LiveData<List<Message>> = _chatMessages
 
@@ -224,40 +223,6 @@ class ImageLearningViewModel : ViewModel(){
         return@withContext "data:image/jpeg;base64," + Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }
 
-    fun clearQuiz() {
-        _currentQuiz.value = null
-        _quizScore.value = null
-        _quizResult.value = null
-    }
-
-    fun submitQuizAnswers(answers: Map<String, String>) {
-        val quiz = _currentQuiz.value ?: return
-        var correctAnswers = 0
-        val feedback = mutableMapOf<String, QuizFeedback>()
-
-        quiz.questions.forEach { question ->
-            val userAnswer = answers[question.id]
-            val isCorrect = userAnswer == question.correctAnswer
-
-            if (isCorrect) {
-                correctAnswers++
-                feedback[question.id] = QuizFeedback(status = "correct")
-            } else {
-                feedback[question.id] = QuizFeedback(
-                    status = "incorrect",
-                    explanation = question.explanation
-                )
-            }
-        }
-
-        _quizResult.value = QuizResult(
-            score = correctAnswers,
-            totalQuestions = quiz.questions.size,
-            feedback = feedback
-        )
-        _quizScore.value = Pair(correctAnswers, quiz.questions.size)
-    }
-
     fun generateQuizFromImage(context: Context, imageUri: Uri) {
         _isGeneratingQuiz.value = true
         _currentQuiz.value = null
@@ -330,7 +295,7 @@ class ImageLearningViewModel : ViewModel(){
                             """.trimIndent()
 
                             val quizRequest = ChatRequest(
-                                model = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+                                model = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
                                 messages = listOf(
                                     Message(role = "user", content = quizPrompt)
                                 )
@@ -398,5 +363,39 @@ class ImageLearningViewModel : ViewModel(){
                 _loading.value = false
             }
         }
+    }
+
+    fun submitQuizAnswers(answers: Map<String, String>) {
+        val quiz = _currentQuiz.value ?: return
+        var correctAnswers = 0
+        val feedback = mutableMapOf<String, QuizFeedback>()
+
+        quiz.questions.forEach { question ->
+            val userAnswer = answers[question.id]
+            val isCorrect = userAnswer == question.correctAnswer
+
+            if (isCorrect) {
+                correctAnswers++
+                feedback[question.id] = QuizFeedback(status = "correct")
+            } else {
+                feedback[question.id] = QuizFeedback(
+                    status = "incorrect",
+                    explanation = question.explanation
+                )
+            }
+        }
+
+        _quizResult.value = QuizResult(
+            score = correctAnswers,
+            totalQuestions = quiz.questions.size,
+            feedback = feedback
+        )
+        _quizScore.value = Pair(correctAnswers, quiz.questions.size)
+    }
+
+    fun clearQuiz() {
+        _currentQuiz.value = null
+        _quizScore.value = null
+        _quizResult.value = null
     }
 }
