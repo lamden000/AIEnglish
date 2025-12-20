@@ -31,6 +31,7 @@ import com.example.lingobuddypck.utils.TaskManager
 import com.example.lingobuddypck.utils.TopicUtils
 import com.google.android.material.textfield.TextInputEditText
 import com.google.gson.Gson
+import kotlin.compareTo
 import kotlin.getValue
 
 class PronunciationActivity : AppCompatActivity() {
@@ -73,6 +74,7 @@ class PronunciationActivity : AppCompatActivity() {
 
         checkAudioPermission()
         setupListeners()
+        setupObservers()
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizer.setRecognitionListener(createRecognitionListener())
@@ -172,8 +174,123 @@ class PronunciationActivity : AppCompatActivity() {
         }
     }
 
+    private fun showCorrectionResult(feedback: PronunciationFeedback) {
+        val mistakesText = if (feedback.mistakes.isNotEmpty()) feedback.mistakes.joinToString(", ") else "Không có lỗi"
+        val suggestionsText = if (feedback.suggestions.isNotEmpty()) feedback.suggestions.joinToString("\n") else "Không có gợi ý sửa lỗi."
+
+        // Check for task completion
+        if (feedback.score >= 8) {
+            TaskManager.markTaskCompleted(this, TaskManager.TaskType.PRONUNCIATION_SCORE)
+        }
+
+        val currentTopic = TaskManager.getDailyTopic(this)
+        if (etTopicInput.text.toString().contains(currentTopic, ignoreCase = true)) {
+            TaskManager.markTaskCompleted(this, TaskManager.TaskType.PRONUNCIATION_TOPIC)
+        }
+        else{
+            Log.d("CustomTask","Today topic: $currentTopic Used topic: "+tvReference.text.toString())
+        }
+
+        val feedbackMessage = """
+            Điểm phát âm: ${feedback.score}/10
+            Lỗi: $mistakesText
+            Gợi ý sửa:
+            $suggestionsText
+        """.trimIndent()
+
+        AlertDialog.Builder(this)
+            .setTitle("Kết quả chấm điểm")
+            .setMessage(feedbackMessage)
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+                viewModel.clearPronunciationFeedback()
+            }
+            .show()
+    }
+
+    private fun getTaskCompletionMessage(): String {
+        val scoreTaskCompleted = TaskManager.isTaskCompleted(this, TaskManager.TaskType.PRONUNCIATION_SCORE)
+        val topicTaskCompleted = TaskManager.isTaskCompleted(this, TaskManager.TaskType.PRONUNCIATION_TOPIC)
+
+        val messages = mutableListOf<String>()
+
+        if (scoreTaskCompleted) {
+            messages.add("✅ Đã hoàn thành nhiệm vụ đạt trên 8 điểm")
+        }
+        if (topicTaskCompleted) {
+            messages.add("✅ Đã hoàn thành nhiệm vụ luyện phát âm chủ đề hôm nay")
+        }
+
+        return if (messages.isEmpty()) "" else "\n\nNhiệm vụ đã hoàn thành:\n${messages.joinToString("\n")}"
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         speechRecognizer.destroy()
+    }
+
+    private fun setupObservers() {
+        viewModel.referenceText.observe(this) { text ->
+            if(text!="Hello, How are you today?") {
+                val originalText = btnGenerateReference.text.toString()
+                val cooldownSeconds = 5
+                object : CountDownTimer((cooldownSeconds * 1000).toLong(), 1000) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        val secondsRemaining = millisUntilFinished / 1000
+                        btnGenerateReference.text = "Đợi ${secondsRemaining}s"
+                    }
+
+                    override fun onFinish() {
+                        btnGenerateReference.text = originalText
+                        btnGenerateReference.isEnabled = true
+                    }
+                }.start()
+                Handler(Looper.getMainLooper()).postDelayed({
+                    btnGenerateReference.isEnabled = true
+                }, 5000)
+            }
+            tvReference.text = text
+            txtResult.text = ""
+            viewModel.clearPronunciationFeedback()
+        }
+
+        viewModel.userSpeechResult.observe(this) { result ->
+            txtResult.text = "Bạn đã nói: $result"
+            viewModel.checkPronunciation(result, viewModel.referenceText.value ?: "")
+        }
+
+        viewModel.pronunciationFeedback.observe(this) { feedback ->
+            feedback?.let {
+                showCorrectionResult(it)
+            }
+        }
+
+        viewModel.statusMessage.observe(this) { message ->
+            txtStatus.text = message
+        }
+
+        viewModel.errorMessage.observe(this) { message ->
+            message?.let {
+                Toast.makeText(this, it, Toast.LENGTH_LONG).show()
+                viewModel.setErrorMessage(null) // Consume the error by setting to null
+            }
+        }
+
+        viewModel.isLoading.observe(this) { isLoading ->
+            progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+            btnStart.isEnabled = !isLoading
+            etTopicInput.isEnabled = !isLoading
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted
+            } else {
+                Toast.makeText(this, "Quyền ghi âm bị từ chối. Không thể sử dụng chức năng này.", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 }

@@ -43,7 +43,6 @@ import com.example.lingobuddypck.ViewModel.ImageLearningViewModel
 import com.example.lingobuddypck.repository.FirebaseWordRepository
 import com.example.lingobuddypck.services.Message
 import com.example.lingobuddypck.adapter.ChatAdapter
-import com.example.lingobuddypck.data.ImageQuiz
 import com.example.lingobuddypck.utils.TaskManager
 import java.io.File
 import java.io.IOException
