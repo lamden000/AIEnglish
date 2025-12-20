@@ -236,6 +236,8 @@ class ImageLearningActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             sendButton.text = if (it) "Sending..." else "Send"
         }
 
+        setupQuizUI()
+
         closeImageButton.setOnClickListener {
             clearImage()
         }
@@ -544,5 +546,18 @@ class ImageLearningActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         viewModel.submitQuizAnswers(answers)
+    }
+
+    private fun setupQuizUI() {
+        generateQuizButton.setOnClickListener {
+            if (selectedImageUri != null) {
+                viewModel.generateQuizFromImage(this, selectedImageUri!!)
+                imagePreviewContainer.visibility = View.GONE
+            }
+        }
+
+        submitQuizButton.setOnClickListener {
+            submitQuizAnswers()
+        }
     }
 }
