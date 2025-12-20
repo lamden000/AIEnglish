@@ -13,10 +13,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.lingobuddypck.data.ImageQuiz
 import com.example.lingobuddypck.network.RetrofitClient
 import com.example.lingobuddypck.services.ChatImageResponse
+import com.example.lingobuddypck.services.ChatRequest
 import com.example.lingobuddypck.services.ChatRequestImage
+import com.example.lingobuddypck.services.ChatResponse
 import com.example.lingobuddypck.services.Message
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Call
@@ -24,10 +28,9 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import kotlin.collections.orEmpty
-import kotlin.collections.toMutableList
 
-class ImageLearningViewModel : ViewModel(){
+class ImageLearningViewModel : ViewModel() {
+
     private val _chatMessages = MutableLiveData<List<Message>>()
     val chatMessages: LiveData<List<Message>> = _chatMessages
 
@@ -220,10 +223,146 @@ class ImageLearningViewModel : ViewModel(){
         return@withContext "data:image/jpeg;base64," + Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }
 
-    fun clearQuiz() {
+    fun generateQuizFromImage(context: Context, imageUri: Uri) {
+        _isGeneratingQuiz.value = true
         _currentQuiz.value = null
         _quizScore.value = null
-        _quizResult.value = null
+        isWaitingForResponse.value = true
+        _loading.value = true
+
+        viewModelScope.launch {
+            try {
+                val base64Image = encodeImageToBase64(context, imageUri)
+                val descriptionPrompt = """
+                    Please describe this image in detail, focusing on:
+                    1. The main objects, people, or scene visible
+                    2. Any actions or activities taking place
+                    3. Notable features, colors, or arrangements
+                    4. The overall context or setting
+                    
+                    Provide a comprehensive but concise description that could be used for English learning purposes.
+                """.trimIndent()
+
+                // Prepare the vision request
+                val visionContentList = mutableListOf<Map<String, Any>>(
+                    mapOf("type" to "image_url", "image_url" to mapOf("url" to base64Image)),
+                    mapOf("type" to "text", "text" to descriptionPrompt)
+                )
+
+                val visionRequest = ChatRequestImage(
+                    model = imageModel,
+                    messages = listOf(
+                        mapOf("role" to "user", "content" to visionContentList)
+                    )
+                )
+
+                // Make the first API call for image description
+                RetrofitClient.instance.chatWithImageAI(visionRequest).enqueue(object : Callback<ChatImageResponse> {
+                    override fun onResponse(call: Call<ChatImageResponse>, response: Response<ChatImageResponse>) {
+                        if (response.isSuccessful) {
+                            val imageDescription = response.body()?.choices?.get(0)?.message?.content
+                                ?: throw Exception("No description content")
+
+                            val quizPrompt = """
+                                Using this image description, create an English learning quiz:
+                                
+                                Image Description: $imageDescription
+                                
+                                Create exactly 5 questions that:
+                                1. Test vocabulary related to objects/actions described
+                                2. Test grammar points that could be used to describe the scene
+                                3. Test comprehension about the situation
+                                4. Include at least one question about cultural aspects if relevant
+                                
+                                Return ONLY a JSON object in this exact format, with no additional text:
+                                {
+                                    "imageDescription": "$imageDescription",
+                                    "questions": [
+                                        {
+                                            "id": "q1",
+                                            "question": "Question text",
+                                            "options": {
+                                                "a": "Option A",
+                                                "b": "Option B",
+                                                "c": "Option C",
+                                                "d": "Option D"
+                                            },
+                                            "correctAnswer": "a",
+                                            "explanation": "Why this answer is correct"
+                                        }
+                                    ]
+                                }
+                            """.trimIndent()
+
+                            val quizRequest = ChatRequest(
+                                model = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+                                messages = listOf(
+                                    Message(role = "user", content = quizPrompt)
+                                )
+                            )
+
+                            RetrofitClient.instance.chatWithAI(quizRequest).enqueue(object : Callback<ChatResponse> {
+                                override fun onResponse(call: Call<ChatResponse>, response: Response<ChatResponse>) {
+                                    if (response.isSuccessful) {
+                                        try {
+                                            isWaitingForResponse.value = false
+                                            _loading.value = false
+                                            val quizContent = response.body()?.output?.choices?.get(0)?.text
+                                                ?: throw Exception("No quiz content")
+
+                                            Log.d("ImageQuizGeneration", "Quiz response: $quizContent")
+
+                                            // Extract JSON from the response
+                                            val jsonPattern = """\{[\s\S]*\}""".toRegex()
+                                            val jsonMatch = jsonPattern.find(quizContent)
+                                            val jsonString = jsonMatch?.value ?: throw Exception("No JSON found in response")
+
+                                            val quiz = Gson().fromJson(jsonString, ImageQuiz::class.java)
+                                            _currentQuiz.postValue(quiz)
+                                        } catch (e: Exception) {
+                                            Log.e("ImageQuizGeneration", "Failed to parse quiz response", e)
+                                            _currentQuiz.postValue(null)
+                                        }
+                                    } else {
+                                        Log.e("ImageQuizGeneration", "Quiz API call failed: ${response.errorBody()?.string()}")
+                                        _currentQuiz.postValue(null)
+                                    }
+                                    _isGeneratingQuiz.postValue(false)
+                                }
+
+                                override fun onFailure(call: Call<ChatResponse>, t: Throwable) {
+                                    Log.e("ImageQuizGeneration", "Quiz API call failed", t)
+                                    _currentQuiz.postValue(null)
+                                    _isGeneratingQuiz.postValue(false)
+                                    isWaitingForResponse.value = false
+                                    _loading.value = false
+                                }
+                            })
+                        } else {
+                            Log.e("ImageQuizGeneration", "Description API call failed: ${response.errorBody()?.string()}")
+                            _currentQuiz.postValue(null)
+                            _isGeneratingQuiz.postValue(false)
+                            isWaitingForResponse.value = false
+                            _loading.value = false
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ChatImageResponse>, t: Throwable) {
+                        Log.e("ImageQuizGeneration", "Description API call failed", t)
+                        _currentQuiz.postValue(null)
+                        _isGeneratingQuiz.postValue(false)
+                        isWaitingForResponse.value = false
+                        _loading.value = false
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e("ImageQuizGeneration", "Failed to generate quiz", e)
+                _currentQuiz.postValue(null)
+                _isGeneratingQuiz.postValue(false)
+                isWaitingForResponse.value = false
+                _loading.value = false
+            }
+        }
     }
 
     fun submitQuizAnswers(answers: Map<String, String>) {
@@ -252,5 +391,11 @@ class ImageLearningViewModel : ViewModel(){
             feedback = feedback
         )
         _quizScore.value = Pair(correctAnswers, quiz.questions.size)
+    }
+
+    fun clearQuiz() {
+        _currentQuiz.value = null
+        _quizScore.value = null
+        _quizResult.value = null
     }
 }

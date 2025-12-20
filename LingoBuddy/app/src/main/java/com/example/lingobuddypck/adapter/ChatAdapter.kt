@@ -13,15 +13,17 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lingobuddypck.services.Message
 import com.example.lingobuddypck.R
 import com.example.lingobuddypck.repository.FirebaseWordRepository
+import com.example.lingobuddypck.utils.enableSelectableSaveAction
 
 class ChatAdapter(
     private val messages: MutableList<Message>,
     private val context: Context, // Giữ lại theo code gốc của bạn
-    private val firebaseWordRepository: FirebaseWordRepository,
+    private val firebaseWordRepository: FirebaseWordRepository, // Giữ lại theo code gốc của bạn
     private val onSpeakClick: (String?) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -54,7 +56,7 @@ class ChatAdapter(
                 val view = inflater.inflate(R.layout.item_message_other, parent, false)
                 // AIMessageViewHolder là inner class nên có thể truy cập context, firebaseWordRepository từ ChatAdapter
                 // nếu cần, nhưng tốt hơn là truyền qua constructor như bạn đang làm.
-                AIMessageViewHolder(view, context, onSpeakClick)
+                AIMessageViewHolder(view, context, firebaseWordRepository, onSpeakClick)
             }
             VIEW_TYPE_TYPING_INDICATOR -> {
                 val view = inflater.inflate(R.layout.item_typing_indicator, parent, false)
@@ -164,6 +166,7 @@ class ChatAdapter(
     inner class AIMessageViewHolder(
         itemView: View,
         private val context: Context, // context này từ ChatAdapter
+        private val firebaseWordRepository: FirebaseWordRepository, // repo này từ ChatAdapter
         private val onSpeakClick: (String?) -> Unit // callback này từ ChatAdapter
     ) : RecyclerView.ViewHolder(itemView) {
 
@@ -180,6 +183,19 @@ class ChatAdapter(
                 onSpeakClick(message.content) // TTS vẫn dùng content gốc có tag
             }
 
+            // Logic save word của bạn (giữ nguyên)
+            textMessage.enableSelectableSaveAction(context) { selectedText, note ->
+                firebaseWordRepository.saveWord(
+                    word = selectedText,
+                    note = note,
+                    onSuccess = {
+                        Toast.makeText(context, "Đã lưu \"$selectedText\"!", Toast.LENGTH_SHORT).show()
+                    },
+                    onFailure = {
+                        Toast.makeText(context, "Lỗi khi lưu từ: ${it.message}", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         }
     }
 
