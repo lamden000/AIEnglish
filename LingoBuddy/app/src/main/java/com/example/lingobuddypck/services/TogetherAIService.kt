@@ -9,11 +9,16 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface TogetherApi {
-    @POST("inference")
-    fun chatWithAI(@Body request: ChatRequest): Call<ChatResponse>
 
-    @POST("inference")
-    fun chatWithImageAI(@Body request: ChatRequestImage): Call<ChatImageResponse>
+    @POST("ask-ai")
+    fun chatWithAI(
+        @Body request: ChatRequest
+    ): Call<ChatResponse>
+
+    @POST("ask-ai")
+    fun chatWithImageAI(
+        @Body request: ChatRequestImage
+    ): Call<ChatImageResponse>
 }
 
 interface OpenAIAPI {
