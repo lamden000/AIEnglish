@@ -6,13 +6,7 @@ app.use(express.json());
 
 const TOGETHER_ENDPOINT = "https://api.together.xyz/v1/chat/completions";
 
-/**
- * Core proxy handler
- * - Nhận body từ client
- * - Forward nguyên body sang TogetherAI
- * - Trả nguyên response về
- */
-async function proxyToTogether(req, res) {
+app.post("/ask-ai", async (req, res) => {
   try {
     const requestBody = req.body;
 
@@ -27,27 +21,58 @@ async function proxyToTogether(req, res) {
 
     const data = await response.json();
 
+    // ==== PHÂN BIỆT TEXT vs IMAGE ====
+    const firstMessage = requestBody?.messages?.[0];
+    const isImageRequest =
+      firstMessage &&
+      typeof firstMessage.content !== "string";
+
+    // ===== IMAGE CHAT: trả nguyên format chat =====
+    if (isImageRequest) {
+      return res.status(response.status).json(data);
+    }
+
+    // ===== TEXT CHAT: ADAPT sang format legacy =====
+    const text =
+      data?.choices?.[0]?.message?.content ?? "";
+
+    const adaptedResponse = {
+      output: {
+        choices: [
+          { text }
+        ]
+      }
+    };
+
+    return res.status(response.status).json(adaptedResponse);
+
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/chat/completions", async (req, res) => {
+  // Giữ nguyên cho OpenAIAPI
+  try {
+    const response = await fetch(TOGETHER_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.TOGETHER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(req.body),
+    });
+
+    const data = await response.json();
     res.status(response.status).json(data);
   } catch (err) {
-    console.error("Proxy error:", err);
-    res.status(500).json({ error: "Proxy server error" });
+    res.status(500).json({ error: "Server error" });
   }
-}
+});
 
-/**
- * === ROUTES ===
- * Hai route này KHỚP TRỰC TIẾP với Retrofit interface của bạn
- */
-
-// For TogetherApi
-app.post("/ask-ai", proxyToTogether);
-
-// For OpenAIAPI-compatible calls
-app.post("/chat/completions", proxyToTogether);
-
-// Optional health check (để khỏi hoảng khi mở URL)
-app.get("/", (req, res) => {
-  res.send("AI Proxy Backend is running 🚀");
+app.get("/", (_, res) => {
+  res.send("AI Proxy Backend running 🚀");
 });
 
 const port = process.env.PORT || 3000;
