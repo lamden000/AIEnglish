@@ -7,33 +7,27 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
-
 object RetrofitClient {
-    private const val BASE_URL = "https://api.together.xyz/"
-    private val apiKey = BuildConfig.TOGETHERAI_API_KEY
+
+    private const val BASE_URL =
+        "https://aienglish-2chh.onrender.com/"
 
     val instance: TogetherApi by lazy {
         val client = OkHttpClient.Builder()
-            .addInterceptor { chain ->
-                val request = chain.request().newBuilder()
-                    .addHeader("Authorization", "Bearer $apiKey")
-                    .addHeader("Content-Type", "application/json")
-                    .build()
-                chain.proceed(request)
-            }
-            .connectTimeout(60, TimeUnit.SECONDS) // Increase connection timeout
-            .readTimeout(60, TimeUnit.SECONDS)    // Increase read timeout
-            .writeTimeout(60, TimeUnit.SECONDS)   // Increase write timeout
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
 
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
-            .client(client) // Set the custom OkHttpClient
+            .client(client)
             .build()
             .create(TogetherApi::class.java)
     }
 }
+
 
 object RetrofitClientOpenAI {
     private const val BASE_URL = "https://api.openai.com/v1/"
